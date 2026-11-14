@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مشاهدة الحلقة - AnimeLuther</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --surface: #131c31;
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #3b82f6;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: rgba(11, 15, 25, 0.95); border-bottom: 1px solid var(--border);
+      height: 60px; padding: 0 20px; display: flex; align-items: center;
+    }
+    .nav-wrap {
+      max-width: 1240px; width: 100%; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; }
+    .brand span { color: var(--accent); }
+    .back-btn {
+      color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 700;
+      background: var(--surface); padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+    }
+    .back-btn:hover { color: #fff; border-color: var(--accent); }
+
+    .container { max-width: 1240px; margin: 22px auto; padding: 0 20px; }
+
+    .title-bar {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      gap: 12px; margin-bottom: 16px;
+    }
+    .title-bar h1 { font-size: 1.35rem; font-weight: 800; }
+    .ep-pill {
+      background: var(--accent); color: #fff; font-weight: 800; font-size: 0.9rem;
+      padding: 4px 14px; border-radius: 8px;
+    }
+
+    /* Clean 16:9 Player Box - 100% Interactive (No overlays blocking clicks/seek) */
+    .player-box {
+      position: relative; width: 100%; aspect-ratio: 16/9;
+      background: #000; border-radius: 14px; overflow: hidden;
+      border: 1px solid var(--border); box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+    }
+    .player-box video, .player-box iframe {
+      width: 100%; height: 100%; border: none; display: block;
+      pointer-events: auto !important;
+    }
+
+    /* Controls & Episodes Section */
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px; margin-top: 18px;
+    }
+    .panel-title { font-size: 0.95rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .btn-row:last-child { margin-bottom: 0; }
+
+    .chip {
+      background: #1e293b; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.1);
+      padding: 7px 14px; border-radius: 8px; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; transition: 0.18s;
+    }
+    .chip:hover { background: #334155; }
+    .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .anime-desc {
+      margin-top: 18px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px; display: flex; gap: 18px; align-items: flex-start;
+    }
+    .anime-desc img { width: 110px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+    .desc-text h3 { font-size: 1.1rem; margin-bottom: 6px; }
+    .desc-text p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; }
+
+    @media (max-width: 640px) {
+      .anime-desc { flex-direction: column; align-items: center; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-wrap">
+      <a href="/" class="brand">Anime<span>Luther</span></a>
+      <a href="/" class="back-btn">العودة للرئيسية</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="title-bar">
+      <h1 id="animeTitle">جاري تحميل الأنمي...</h1>
+      <span class="ep-pill" id="epLabel">الحلقة 1</span>
+    </div>
+
+    <div class="player-box" id="playerContainer">
+      <video id="nativeVideo" controls playsinline crossorigin="anonymous"></video>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">اختر السيرفر المشغل (في حال لم يعمل السيرفر المباشر اختر سيرفراً بديلاً):</div>
+      <div class="btn-row" id="serversRow"></div>
+
+      <div class="panel-title">الحلقات:</div>
+      <div class="btn-row" id="episodesRow"></div>
+    </div>
+
+    <div class="anime-desc" id="infoCard" style="display:none;">
+      <img id="coverImg" src="" alt="Cover">
+      <div class="desc-text">
+        <h3 id="subTitle"></h3>
+        <p id="synopsis"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const anilistId = params.get('anilistId') || '11061';
+    let currentEp = parseInt(params.get('ep') || '1', 10);
+    const playerContainer = document.getElementById('playerContainer');
+    let hlsInstance = null;
+
+    async function loadAnimeDetails() {
+      try {
+        const res = await fetch(`/api/anilist/info?anilistId=${anilistId}`);
+        const data = await res.json();
+        const info = data?.resolved?.info;
+        if (info) {
+          const mainName = info.title?.english || info.title?.romaji || 'Anime';
+          document.getElementById('animeTitle').textContent = mainName;
+          document.title = `${mainName} - الحلقة ${currentEp}`;
+
+          document.getElementById('infoCard').style.display = 'flex';
+          document.getElementById('coverImg').src = info.coverImage?.large || '';
+          document.getElementById('subTitle').textContent = info.title?.romaji || mainName;
+          document.getElementById('synopsis').textContent = (info.description || '').replace(/<[^>]+>/g, '');
+
+          const totalEps = info.episodes || (info.nextAiringEpisode ? info.nextAiringEpisode.episode - 1 : 24) || 24;
+          buildEpisodeButtons(totalEps);
+        } else {
+          buildEpisodeButtons(24);
+        }
+      } catch (e) {
+        buildEpisodeButtons(24);
+      }
+      loadEpisodeStream(currentEp);
+    }
+
+    function buildEpisodeButtons(count) {
+      const row = document.getElementById('episodesRow');
+      let html = '';
+      for (let i = 1; i <= count; i++) {
+        html += `<button class="chip ${i === currentEp ? 'active' : ''}" onclick="changeEpisode(${i})">${i}</button>`;
+      }
+      row.innerHTML = html;
+    }
+
+    function changeEpisode(ep) {
+      currentEp = ep;
+      document.getElementById('epLabel').textContent = `الحلقة ${ep}`;
+      document.querySelectorAll('#episodesRow .chip').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx + 1 === ep);
+      });
+      loadEpisodeStream(ep);
+    }
+
+    async function loadEpisodeStream(ep) {
+      const serversRow = document.getElementById('serversRow');
+      serversRow.innerHTML = '<span style="color:#94a3b8; font-size:0.85rem;">جاري جلب السيرفرات...</span>';
+
+      try {
+        const res = await fetch(`/api/megap/stream?anilistId=${anilistId}&episode=${ep}&lang=sub`);
+        const data = await res.json();
+
+        let buttonsHtml = '';
+        const fallbacks = data.embedFallbacks || [];
+
+        if (data.m3u8Url) {
+          buttonsHtml += `<button class="chip active" onclick="playDirectM3U8('${data.m3u8Url}', this)">سيرفر مباشر HD (تحكم كامل)</button>`;
+        }
+
+        fallbacks.forEach((srv, idx) => {
+          const isFirstActive = !data.m3u8Url && idx === 0;
+          buttonsHtml += `<button class="chip ${isFirstActive ? 'active' : ''}" onclick="playEmbed('${srv.url}', this)">${srv.name}</button>`;
+        });
+
+        serversRow.innerHTML = buttonsHtml;
+
+        if (data.m3u8Url) {
+          playDirectM3U8(data.m3u8Url);
+        } else if (fallbacks.length > 0) {
+          playEmbed(fallbacks[0].url);
+        }
+      } catch (e) {
+        playEmbed(`https://vidsrc.icu/embed/anime/${anilistId}/${ep}/0`);
+      }
+    }
+
+    function setActiveServerBtn(btn) {
+      if (!btn) return;
+      document.querySelectorAll('#serversRow .chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function playDirectM3U8(m3u8Url, btn) {
+      setActiveServerBtn(btn);
+      if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+      playerContainer.innerHTML = '<video id="nativeVideo" controls playsinline autoplay></video>';
+      const video = document.getElementById('nativeVideo');
+
+      if (Hls.isSupported()) {
+        hlsInstance = new Hls();
+        hlsInstance.loadSource(m3u8Url);
+        hlsInstance.attachMedia(video);
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = m3u8Url;
+        video.play().catch(() => {});
+      }
+    }
+
+    function playEmbed(embedUrl, btn) {
+      setActiveServerBtn(btn);
+      if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+      playerContainer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe>`;
+    }
+
+    loadAnimeDetails();
+  </script>
+</body>
+</html>
