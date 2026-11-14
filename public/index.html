@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090b12"><meta name="description" content="Anime Luther — discover your next anime.">
+<title>Anime Luther — Discover Anime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><span class="brand-mark">L</span><span>ANIME <b>LUTHER</b></span></a>
+  <nav><a class="active" href="#home">Home</a><a href="#discover">Discover</a><a href="#saved">My List <span id="saved-count">0</span></a></nav>
+  <label class="search"><span>⌕</span><input id="search" placeholder="Search anime..." autocomplete="off"><kbd>/</kbd></label>
+</header>
+<main id="home">
+<section class="hero" id="hero">
+ <div class="hero-shade"></div><div class="hero-copy">
+  <div class="eyebrow"><i></i> YOUR NEXT STORY STARTS HERE</div>
+  <h1>FIND YOUR<br><em> NEXT WORLD.</em></h1>
+  <p>Explore anime worth getting lost in. Discover trending series, timeless favorites, and something new.</p>
+  <a class="primary" href="#discover">Explore anime <span>↗</span></a>
+ </div><div class="hero-note"><span>01 / DISCOVER</span><span>CURATED FOR YOU</span></div>
+</section>
+<section class="section" id="discover">
+ <div class="section-head"><div><div class="eyebrow">THE COMMUNITY IS WATCHING</div><h2>Trending now<span>.</span></h2></div><span class="section-meta">UPDATED LIVE <i></i></span></div>
+ <div id="trending" class="anime-grid"><div class="loading">Loading anime collection...</div></div>
+</section>
+<section class="section popular-section">
+ <div class="section-head"><div><div class="eyebrow">FAN FAVORITES</div><h2>Popular picks<span>.</span></h2></div></div>
+ <div id="popular" class="anime-grid"><div class="loading">Loading popular anime...</div></div>
+</section>
+<section class="section saved-section" id="saved">
+ <div class="section-head"><div><div class="eyebrow">KEEP THEM CLOSE</div><h2>Your watchlist<span>.</span></h2></div><button id="clear-list" class="quiet">Clear list</button></div>
+ <div id="watchlist" class="anime-grid"><p class="empty">Your list is empty. Save an anime to keep it here.</p></div>
+</section>
+</main>
+<footer><a class="brand" href="/"><span class="brand-mark">L</span><span>ANIME <b>LUTHER</b></span></a><p>Anime discovery, made simple.</p><small>Anime information provided by AniList. Anime Luther is an independent fan project.</small></footer>
+<div id="modal" class="modal" aria-hidden="true"><div class="modal-backdrop"></div><article class="detail-panel"><button class="close" aria-label="Close">×</button><div id="detail-content"></div></article></div>
+<div id="toast" class="toast"></div>
+<script src="/app.js"></script>
+</body></html>
