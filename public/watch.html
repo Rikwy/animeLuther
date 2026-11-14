@@ -53,7 +53,6 @@
     }
     .player-box video, .player-box iframe {
       width: 100%; height: 100%; border: none; display: block;
-      pointer-events: auto !important;
     }
 
     .panel {
@@ -100,12 +99,13 @@
       <span class="ep-pill" id="epLabel">الحلقة 1</span>
     </div>
 
+    <!-- حاوية ديناميكية تدعم الـ Video المباشر أو الـ Iframe حسب السيرفر -->
     <div class="player-box" id="playerContainer">
       <iframe id="playerFrame" src="" allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe>
     </div>
 
     <div class="panel">
-      <div class="panel-title">تبديل السيرفر (MEGA PLAY & ANIMEX):</div>
+      <div class="panel-title">تبديل السيرفر:</div>
       <div class="btn-row" id="serversRow"></div>
 
       <div class="panel-title">الحلقات:</div>
@@ -125,13 +125,29 @@
     const params = new URLSearchParams(window.location.search);
     const anilistId = params.get('anilistId') || '11061';
     let currentEp = parseInt(params.get('ep') || '1', 10);
-    const playerFrame = document.getElementById('playerFrame');
+    const container = document.getElementById('playerContainer');
 
     const servers = [
-      { name: 'MEGA PLAY (مترجم)', getUrl: (id, ep) => `https://megaplay.xyz/embed/anime/${id}/${ep}` },
-      { name: 'MEGA PLAY (مدبلج)', getUrl: (id, ep) => `https://megaplay.xyz/embed/anime/${id}/${ep}/dub` },
-      { name: 'ANIMEX Server 1', getUrl: (id, ep) => `https://animex.one/embed/${id}/${ep}` },
-      { name: 'ANIMEX Server 2', getUrl: (id, ep) => `https://vidsrc.cc/v2/embed/anime/${anilistId}/${ep}` }
+      { 
+        name: 'MegaPlay (مترجم)', 
+        type: 'iframe', 
+        getUrl: (id, ep) => `https://megaplay.xyz/embed/anime/${id}/${ep}` 
+      },
+      { 
+        name: 'MegaPlay (مدبلج)', 
+        type: 'iframe', 
+        getUrl: (id, ep) => `https://megaplay.xyz/embed/anime/${id}/${ep}/dub` 
+      },
+      { 
+        name: 'Animex Server', 
+        type: 'iframe', 
+        getUrl: (id, ep) => `https://animex.one/embed/${id}/${ep}` 
+      },
+      { 
+        name: 'VidSrc الاحتياطي', 
+        type: 'iframe', 
+        getUrl: (id, ep) => `https://vidsrc.cc/v2/embed/anime/${anilistId}/${ep}` 
+      }
     ];
 
     async function loadAnimeDetails() {
@@ -149,8 +165,7 @@
           document.getElementById('subTitle').textContent = info.title?.romaji || mainName;
           document.getElementById('synopsis').textContent = (info.description || '').replace(/<[^>]+>/g, '');
 
-          const totalEps = info.episodes || 24;
-          buildEpisodeButtons(totalEps);
+          buildEpisodeButtons(info.episodes || 24);
         } else {
           buildEpisodeButtons(24);
         }
@@ -182,7 +197,10 @@
 
     function loadServer(index) {
       const srv = servers[index] || servers[0];
-      playerFrame.src = srv.getUrl(anilistId, currentEp);
+      
+      if (srv.type === 'iframe') {
+        container.innerHTML = `<iframe id="playerFrame" src="${srv.getUrl(anilistId, currentEp)}" allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe>`;
+      }
 
       const rows = document.getElementById('serversRow');
       rows.innerHTML = servers.map((s, i) => `
